@@ -10,7 +10,7 @@ NewsSense — Resumo e Classificação de Sentimento de Notícias Financeiras em
 ### 1.2 Equipe
 | Nome | Papel principal |
 |---|---|
-| Gisele | Todos os papéis (projeto individual)
+| Gisele | Todos os papéis (projeto individual) |
 
 ### 1.3 Contexto e motivação
 Investidores de varejo acompanham dezenas de notícias financeiras diariamente, mas raramente têm tempo de ler cada matéria por completo para decidir sua relevância. Um sistema que resume automaticamente e classifica o tom (positivo/negativo/neutro) de uma notícia em relação ao mercado permite triagem rápida, reduzindo a sobrecarga informacional e apoiando decisões de acompanhamento mais ágeis.
@@ -140,3 +140,39 @@ Cada execução adiciona apenas notícias novas (deduplicado por link) em `data/
 
 ### 7.4 Próximos comandos
 [TODO Entrega 2] `make train`, `make evaluate` conforme pipeline avançar.
+
+---
+
+## 8. Trabalhos Futuros
+
+### 8.1 Correlação entre Sentimento Agregado Diário e Retorno do Ibovespa
+
+**Motivação:** durante o processo de rotulagem manual, surgiu a hipótese de que o sentimento agregado das notícias publicadas num dia específico pode estar correlacionado com a variação do Ibovespa naquele mesmo dia ou no dia seguinte (efeito defasado). Essa análise conecta diretamente o pipeline de NLP com evidência observável de mercado, e é extensão natural da pesquisa da autora sobre sentimento de investidor e precificação de ativos (FIIs, IFIX — tema do mestrado em Finanças na UFPB).
+
+**O que seria necessário:**
+
+**1. Volume temporal suficiente:** a análise só é estatisticamente válida com pelo menos 20-30 dias distintos de coleta acumulada, onde cada dia tenha sentimento agregado calculável. Com coleta iniciada em 30/jun/2026, isso estará disponível em meados de agosto/2026.
+
+**2. Índice de sentimento agregado diário:** agrupar as notícias por `data_publicacao` e calcular, por dia, a proporção de positivas/negativas/neutras — gerando um score diário entre -1 e +1.
+
+**3. Retorno diário do Ibovespa via yfinance (Yahoo Finance API):**
+```python
+import yfinance as yf
+ibov = yf.download("^BVSP", start="2026-06-30", end="2026-08-31")
+ibov["retorno"] = ibov["Close"].pct_change()
+```
+
+**4. Análise de correlação:** cruzar o índice de sentimento diário com o retorno do Ibovespa no mesmo dia (contemporâneo) e com defasagem de 1 dia (sentimento de hoje prediz retorno de amanhã — análise preditiva). Métricas: correlação de Pearson/Spearman, regressão linear simples sentimento → retorno.
+
+**5. Fonte retroativa de notícias via Wayback Machine (para ampliar janela temporal):** o Wayback Machine (https://web.archive.org/) arquiva páginas do InfoMoney com timestamp histórico, permitindo recuperar notícias de datas anteriores a 30/jun/2026. Endpoint de API:
+```
+http://archive.org/wayback/available?url=infomoney.com.br/mercados&timestamp=20260601
+```
+Retorna o snapshot mais próximo da data solicitada. Isso permitiria retroativamente coletar títulos de notícias de mercado de jan–jun/2026 e cruzar com o retorno histórico do Ibovespa, ampliando a janela de análise de 1 mês para 6+ meses. Respeitar os mesmos limites já aplicados no projeto: apenas título e metadados, sem corpo de texto.
+
+**Hipótese a testar:** dias com proporção de notícias negativas acima de determinado limiar antecedem quedas do Ibovespa no dia seguinte com frequência estatisticamente superior ao acaso.
+
+**Por que ainda não foi feita:** volume temporal insuficiente na data de entrega (30/jun–31/jul/2026 é janela de apenas 1 mês). Retornar após 60-90 dias de coleta acumulada.
+
+**Referência metodológica:** Baker & Wurgler (2006) — framework de índice de sentimento de investidor aplicado a retornos de ativos; base teórica já utilizada na dissertação de mestrado da autora.
+
