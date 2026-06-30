@@ -9,9 +9,21 @@ Armazena os itens novos em data/raw/noticias.csv (append, sem duplicar por link)
 
 import csv
 import os
+import re
 from datetime import datetime
 
 import feedparser
+
+TAG_RE = re.compile(r"<[^>]+>")
+RODAPE_RE = re.compile(r"The post .* appeared first on .*\.", re.DOTALL)
+
+
+def limpar_resumo(html: str) -> str:
+    """Remove tags HTML e o rodape padrao de feeds WordPress (ex: 'The post X appeared first on Y.')."""
+    texto = RODAPE_RE.sub("", html)
+    texto = TAG_RE.sub(" ", texto)
+    texto = re.sub(r"\s+", " ", texto).strip()
+    return texto
 
 FEEDS = {
     "infomoney_geral": "https://www.infomoney.com.br/feed/",
@@ -47,7 +59,7 @@ def coletar() -> int:
                 "fonte": fonte,
                 "categoria": fonte.split("_", 1)[1] if "_" in fonte else "geral",
                 "titulo": entry.get("title", "").strip(),
-                "resumo_rss": entry.get("summary", "").strip(),
+                "resumo_rss": limpar_resumo(entry.get("summary", "")),
                 "link": link,
                 "data_publicacao": entry.get("published", ""),
                 "coletado_em": datetime.now().isoformat(timespec="seconds"),
