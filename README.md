@@ -85,6 +85,19 @@ Lexicon de sentimento genérico em português (ex: SentiLex-PT ou OpLexicon), se
 ### 3.6 Protocolo de validação [E1]
 Amostra de ~100-150 notícias rotuladas manualmente como verdade de referência; split treino/validação respeitando ordem temporal de coleta (sem vazamento futuro→passado).
 
+#### 3.6.1 Critério de rotulagem manual
+
+A rotulagem de sentimento (positivo / negativo / neutro) segue as regras abaixo, consolidadas durante a primeira leva de anotação (18 notícias, 30/06/2026):
+
+- **O rótulo reflete o estado/situação presente do evento, não o desfecho hipotético futuro.** Ex: uma empresa em processo de venda/reestruturação é rotulada como negativo (problema ocorrendo agora), mesmo que a reestruturação possa trazer melhora depois.
+- **Ações ou propostas corretivas em curso (governo, empresa, instituição) tendem a positivo**, por representarem resposta ativa a um problema (ex: proposta de renegociação de dívida, mecanismo para conter alta de preço, avanço de pauta institucional como autonomia do BC).
+- **Para notícias com informação mista** (ex: queda de ativo + recomendação de compra de analista), prevalece o evento de mercado principal, não a recomendação subsequente.
+- **Notícias sem nenhuma conexão com mercado/economia** (política partidária interna, esportes, etc., presentes no feed "geral" por não terem categoria própria) são rotuladas como neutro. Avaliar em revisão futura se devem ser excluídas do dataset por estarem fora do escopo do projeto.
+- **Declarações político-institucionais sobre desempenho econômico** (sem dado novo e verificável) são rotuladas pelo teor da fala (positivo/negativo), não automaticamente como neutro.
+
+Por ser rotulagem individual, esse critério está sujeito a viés de interpretação de uma única anotadora — limitação documentada e a ser discutida na Entrega 2 (Seção 6.2).
+
+
 ### 3.7 Métricas e critérios de sucesso [E1]
 - F1-macro ≥ 0.70 nas 3 classes de sentimento
 - Accuracy do modelo ajustado superior ao baseline lexicon em pelo menos 10 pontos percentuais
