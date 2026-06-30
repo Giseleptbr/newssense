@@ -10,7 +10,7 @@ NewsSense — Resumo e Classificação de Sentimento de Notícias Financeiras em
 ### 1.2 Equipe
 | Nome | Papel principal |
 |---|---|
-| Gisele | Todos os papéis (projeto individual, aprovado pelo instrutor) |
+| Gisele | Todos os papéis (projeto individual)
 
 ### 1.3 Contexto e motivação
 Investidores de varejo acompanham dezenas de notícias financeiras diariamente, mas raramente têm tempo de ler cada matéria por completo para decidir sua relevância. Um sistema que resume automaticamente e classifica o tom (positivo/negativo/neutro) de uma notícia em relação ao mercado permite triagem rápida, reduzindo a sobrecarga informacional e apoiando decisões de acompanhamento mais ágeis.
