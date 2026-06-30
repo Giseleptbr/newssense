@@ -1,0 +1,17 @@
+[project]
+name = "newssense"
+version = "0.1.0"
+description = "Resumo e classificacao de sentimento de noticias financeiras via RSS"
+requires-python = ">=3.11"
+dependencies = [
+    "feedparser>=6.0.11",
+    "pandas>=2.2.0",
+    "requests>=2.31.0",
+    "scikit-learn>=1.4.0",
+    "nltk>=3.8.1",
+    "python-dateutil>=2.9.0",
+    "mlflow>=2.12.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0", "jupyter>=1.0.0"]
