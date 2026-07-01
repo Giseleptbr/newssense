@@ -5,6 +5,8 @@ Uso:
     python src/coleta_rss.py
 
 Armazena os itens novos em data/raw/noticias.csv (append, sem duplicar por link).
+Notícias fora do escopo financeiro (esportes, entretenimento, segurança pública etc.)
+são filtradas automaticamente antes de entrar no dataset.
 """
 
 import csv
@@ -17,13 +19,33 @@ import feedparser
 TAG_RE = re.compile(r"<[^>]+>")
 RODAPE_RE = re.compile(r"The post .* appeared first on .*\.", re.DOTALL)
 
+# Termos que indicam conteúdo fora do escopo financeiro BR
+# Aplicado ao título da notícia (case-insensitive)
+FORA_DE_ESCOPO = re.compile(
+    r"\b("
+    r"copa|futebol|seleção|gols?|placar|estádio|jogador|treina|escalação|campeão|semifinal|final da copa|"
+    r"gramado|haaland|neymar|mbappé|messi|ronaldo|"
+    r"oscar|emmy|grammy|festival|celebridade|ator|atriz|série|filme|novela|"
+    r"lotérica|bilhete premiado|sorteio da mega|"
+    r"terremoto|furacão|enchente|incêndio|tragédia natural|"
+    r"investigação policial|pf investiga|operação policial|tráfico|homicídio|"
+    r"onde assistir|como assistir|transmissão ao vivo"
+    r")\b",
+    re.IGNORECASE,
+)
+
 
 def limpar_resumo(html: str) -> str:
-    """Remove tags HTML e o rodape padrao de feeds WordPress (ex: 'The post X appeared first on Y.')."""
+    """Remove tags HTML e o rodape padrao de feeds WordPress."""
     texto = RODAPE_RE.sub("", html)
     texto = TAG_RE.sub(" ", texto)
     texto = re.sub(r"\s+", " ", texto).strip()
     return texto
+
+
+def fora_de_escopo(titulo: str) -> bool:
+    """Retorna True se o titulo indica conteudo nao-financeiro."""
+    return bool(FORA_DE_ESCOPO.search(titulo))
 
 FEEDS = {
     "infomoney_geral": "https://www.infomoney.com.br/feed/",
@@ -48,6 +70,7 @@ def coletar() -> int:
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     links_existentes = carregar_links_existentes(OUTPUT_PATH)
     novos = []
+    filtradas = 0
 
     for fonte, url in FEEDS.items():
         parsed = feedparser.parse(url)
@@ -55,10 +78,15 @@ def coletar() -> int:
             link = entry.get("link", "")
             if not link or link in links_existentes:
                 continue
+            titulo = entry.get("title", "").strip()
+            if fora_de_escopo(titulo):
+                filtradas += 1
+                links_existentes.add(link)  # marca como visto pra nao reprocessar
+                continue
             novos.append({
                 "fonte": fonte,
                 "categoria": fonte.split("_", 1)[1] if "_" in fonte else "geral",
-                "titulo": entry.get("title", "").strip(),
+                "titulo": titulo,
                 "resumo_rss": limpar_resumo(entry.get("summary", "")),
                 "link": link,
                 "data_publicacao": entry.get("published", ""),
@@ -66,6 +94,8 @@ def coletar() -> int:
             })
             links_existentes.add(link)
 
+    if filtradas:
+        print(f"{filtradas} noticias filtradas por estar fora do escopo financeiro.")
     if not novos:
         print("Nenhuma noticia nova encontrada.")
         return 0

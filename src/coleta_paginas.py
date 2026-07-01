@@ -25,6 +25,7 @@ import time
 
 import requests
 from bs4 import BeautifulSoup
+from coleta_rss import fora_de_escopo
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; NewsSenseBot/0.1; pesquisa academica)"}
 
@@ -93,6 +94,9 @@ def coletar(max_paginas: int = 1):
             novos_nesta_pagina = 0
             for item in itens:
                 if item["link"] in links_existentes:
+                    continue
+                if fora_de_escopo(item["titulo"]):
+                    links_existentes.add(item["link"])
                     continue
                 novos.append({
                     "fonte": f"infomoney_{categoria}_scraping",
