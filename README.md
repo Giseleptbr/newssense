@@ -144,7 +144,51 @@ Cada execução adiciona apenas notícias novas (deduplicado por link) em `data/
 
 ---
 
-## 8. Trabalhos Futuros
+## 8. Análise Comparativa dos Modelos (atualização em andamento)
+
+### 8.1 Resultados de accuracy (N=54 rótulos manuais)
+
+| Modelo | Accuracy | Acertos |
+|---|---|---|
+| Chute pela classe majoritária (referência) | ~37% | ~20/54 |
+| Zero-shot multilíngue (cardiffnlp/twitter-xlm-roberta) | 42,59% | 23/54 |
+| Ensemble maioria (3 modelos) | 42,59% | 23/54 |
+| Lexicon genérico (OpLexicon v3.0) | 46,30% | 25/54 |
+| FinBERT-PT-BR (lucas-leme/FinBERT-PT-BR) | 46,30% | 25/54 |
+| Ensemble lex-priority | 46,30% | 25/54 |
+| Ensemble fin-priority | 46,30% | 25/54 |
+
+**Conclusão:** o teto sem fine-tuning é 46,30%. Nenhuma combinação de modelos pré-treinados supera esse valor com os dados atuais. Para atingir a meta de F1-macro ≥ 0,70 da proposta, o caminho necessário é fine-tuning do FinBERT-PT-BR com os rótulos manuais deste projeto (meta: 100-150 exemplos).
+
+### 8.2 Padrões de erro identificados (inspeção qualitativa)
+
+Ao inspecionar os casos onde Lexicon e FinBERT divergem entre si, identificaram-se dois padrões complementares:
+
+**FinBERT-PT-BR acerta onde o Lexicon erra:**
+- Notícias de queda de mercado com vocabulário neutro no título (ex: "Ibovespa cai e tenta segurar 172 mil pontos", "Ouro recua 12%", "Bitcoin pior investimento do semestre") — o FinBERT entende o contexto financeiro; o Lexicon fica preso em adjetivos isolados como "forte" ou "segura", que têm polaridade positiva fora de contexto.
+- Notícias de risco fiscal ("déficit público", "pauta-bomba avançar") — FinBERT capta o tom negativo corretamente.
+
+**Lexicon acerta onde o FinBERT erra:**
+- Notícias institucionais/políticas com tom positivo declarado (ex: "Petrobras cria mecanismo e limita alta do gás", "Senado adia votação de pauta-bomba", "Tesouro paga juros históricos") — o FinBERT classifica como neutro ou negativo porque foi treinado com um critério diferente (juros altos = negativo no corpus de treino, mas no critério deste projeto = oportunidade de investimento = positivo).
+- Notícias de Copa/esportes/política sem relação com mercado — o FinBERT vicia em negativo; o Lexicon acerta neutro com score zero (sem termos financeiros reconhecidos).
+
+### 8.3 Interpretação
+
+O ensemble (42,59%) ficou abaixo dos dois modelos individuais (46,30% cada), o que é contra-intuitivo mas explicável: os dois modelos concordam em apenas 37% dos casos. Quando divergem (63% das notícias), o desempate por confiança do FinBERT escolhe errado sistematicamente nos casos de notícias institucionais/políticas — exatamente onde o lexicon é mais forte. Com N=54, qualquer ajuste fino no critério de desempate seria overfitting.
+
+O resultado mais relevante permanece o empate entre Lexicon e FinBERT com **conjuntos de erro complementares**: os dois acertam e erram em casos distintos. Isso não é sinal de que os modelos são equivalentes — é sinal de que nenhum dos dois aprendeu o critério de rotulagem deste projeto. A raiz do problema é o **desalinhamento de critério**: os modelos foram treinados com uma definição de sentimento diferente da adotada neste projeto. O critério deste projeto ("estado presente + ação corretiva = positivo") é mais contextual e menos emocional do que os critérios de treino padrão.
+
+Isso reforça a hipótese central: **fine-tuning do FinBERT-PT-BR com os rótulos manuais deste projeto** (meta: 100-150) deve ser o passo que de fato faz diferença, pois alinha o modelo ao critério específico de rotulagem adotado — sem isso, qualquer combinação dos modelos existentes opera num critério diferente do esperado.
+
+### 8.4 Próximos passos
+
+1. **Ensemble** (Lexicon + FinBERT com desempate por confiança) — resultado a preencher
+2. **Fine-tuning do FinBERT-PT-BR** com os rótulos manuais acumulados, a partir de 100-150 exemplos
+3. **Correlação sentimento x Ibovespa** — ver Seção 9
+
+---
+
+## 9. Trabalhos Futuros
 
 ### 8.1 Correlação entre Sentimento Agregado Diário e Retorno do Ibovespa
 
